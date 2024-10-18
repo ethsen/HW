@@ -14,5 +14,8 @@ def est_pixel_world(pixels, R_wc, t_wc, K):
     """
     pixels = np.hstack((pixels, np.ones((pixels.shape[0], 1))))
     t_wc = (t_wc* np.ones((pixels.shape))).T
-    Pw = R_wc @ (np.linalg.inv(K) @ pixels.T) - t_wc
+    Pw = (R_wc @ (np.linalg.inv(K) @ pixels.T)) + t_wc
+
+    scale = t_wc[2] / (R_wc.T[2] @ (np.linalg.inv(K) @ pixels.T))
+    Pw = Pw * scale
     return Pw.T

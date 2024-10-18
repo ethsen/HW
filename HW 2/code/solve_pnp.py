@@ -13,23 +13,18 @@ def PnP(Pc, Pw, K=np.eye(3)):
         t: (3, ) numpy array describing camera translation in the world (t_wc)
 
     """
-    #Pw = Pw[:,:2]/ Pw[:,-1][:, np.newaxis]
-    Pc = np.hstack((Pc, np.ones((Pc.shape[0], 1))))
-    Pc = (np.linalg.inv(K) @ Pc.T).T
-    #Pw = Pw[:,:2]
-
-    homography =  est_homography(Pw[:,:2], Pc[:,:2])
+    homography =  est_homography(Pw[:,:2], Pc)
     hPrime = np.linalg.inv(K) @ homography
 
     u,s,v = np.linalg.svd(hPrime[:,:2], full_matrices= False)
     r1r2 = u @ v
     r3 = np.cross(r1r2[:,0], r1r2[:,1])
 
-    R = np.array([r1r2[:,0],r1r2[:,1], r3]).T
+    R = np.array([r1r2[:,0],r1r2[:,1], r3])
     lmda = np.sum(s)/2
 
     t = hPrime[:,-1] /lmda
-    
+    t = -1* R @ t
     return R, t
 
 
