@@ -24,7 +24,7 @@ def PnP(Pc, Pw, K=np.eye(3)):
     lmda = np.sum(s)/2
 
     t = hPrime[:,-1] /lmda
-    t = -1* R @ t
+    t = -1*R @ t
     return R, t
 
 
