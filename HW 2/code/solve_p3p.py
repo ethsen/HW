@@ -27,7 +27,7 @@ def P3P(Pc, Pw, K=np.eye(3)):
 
     constants = defineConsts(calibCoords, Pw, p1,p2,p3)
     roots = calcRoots(constants)
-
+    bestError = 10000
     for i in range(len(roots)):
         s= quarticFunc(roots[i], constants)
         pc1 = s[0] * constants[6]
@@ -36,14 +36,21 @@ def P3P(Pc, Pw, K=np.eye(3)):
         Pc =np.array([pc1,pc2,pc3])
         R,t = Procrustes(Pc, [Pw[p1],Pw[p2],Pw[p3]])        
 
-        #projected_point = (K @ (R @ Pw[p4].T + t)).T
         projected_point = K @ (R.T @ (Pw[p4].T - t))
         projected_point /= projected_point[2]
         projected_point = np.array(projected_point.flatten())
 
-        if np.allclose(projected_point, homogenousPix[p4],atol=1e-5):
-            print("huh")
-            return R,t
+        currError = np.sum(np.square(projected_point -homogenousPix[p4]))
+        if currError < bestError:
+            bestError = currError
+            bestR = R
+            bestT = t
+
+    return bestR, bestT
+
+    
+
+        
 
 def defineConsts(imgCoords, worldCoords,p1,p2,p3):
     a = np.linalg.norm((worldCoords[p2] - worldCoords[p3]))
@@ -140,14 +147,16 @@ def Procrustes(X, Y):
     a = Y - meanPw
     b = X - meanPc
 
-    u,s,v = np.linalg.svd(a @ b.T, full_matrices= False)
+    u,s,v = np.linalg.svd(b.T @ a, full_matrices= True)
 
-    detCheck = np.eye(3)
-    detCheck[-1,-1]= np.linalg.det(v.T @ u.T)
+    R = (v.T  @ u.T)
+    if np.linalg.det(R) <0:
+        detCheck = np.eye(3)
+        detCheck[-1,-1]= np.linalg.det(v.T @ u.T)
+        R = (v.T @ detCheck  @ u.T)
 
-    R = (v.T @ detCheck @ u.T)
 
-    t = meanPw - R@meanPc
+    t = meanPw - R @ meanPc
 
     return R,t 
 

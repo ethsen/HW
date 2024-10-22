@@ -16,11 +16,8 @@ def est_pixel_world(pixels, R_wc, t_wc, K):
     
 
     t_wc = (t_wc* np.ones((pixels.shape))).T
-    scaleFactor = (t_wc[2]) / (R_wc[2] @ (np.linalg.inv(K) @ pixels.T))
-    
-    #Pw = R_wc @ ((np.linalg.inv(K) @ (scaleFactor *pixels.T)) - t_wc)
-    Pw = (R_wc @ (np.linalg.inv(K) @ (scaleFactor *pixels.T))) - t_wc
-    Pw[0] = -Pw[0]
-    Pw[1] = -Pw[1] 
+    scaleFactor = (-t_wc[2]) / (R_wc[2] @ np.linalg.inv(K) @ pixels.T)  
+    Pw = (R_wc @ np.linalg.inv(K) @ (scaleFactor *pixels.T)) + t_wc
+
 
     return Pw.T
