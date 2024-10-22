@@ -38,7 +38,7 @@ def run_reproject(pixels, R_wc, t_wc, K, image, obj_meshes=None, shift=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--solver', type=str, default='PnP', help="Algorithm to use, PnP or P3P", choices=["PnP", "P3P"])
+    parser.add_argument('--solver', type=str, default='P3P', help="Algorithm to use, PnP or P3P", choices=["PnP", "P3P"])
     parser.add_argument('--click_points', action='store_true',
                                 help="Whether to click points for placing the objects")
     parser.add_argument('--debug', action='store_true', help="Helper flag for debugging")

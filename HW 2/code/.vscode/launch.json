@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "main.py",
             "console": "integratedTerminal",
-            "args": "--debug --solver PnP"
+            "args": "--debug --solver P3P"
         }
     ]
 }
