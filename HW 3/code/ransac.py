@@ -32,7 +32,7 @@ def ransac_estimator(X1, X2, num_iterations=60000):
         d = d1 
         #numerator = (np.sum(X2[test_indices]  * (X1[test_indices] @ E), axis=1))**2
         #denominator = np.sum((X1[test_indices] @ E.T)[:,:2]**2, axis= 1) + np.sum((E @ X1[test_indices].T)[:2,:]**2, axis = 0)
-        #d = numerator /denominator
+        #d = numerator /denominato
         inliers = test_indices[d< eps]
         num_inliers = len(inliers)
 
