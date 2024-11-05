@@ -26,14 +26,13 @@ def ransac_estimator(X1, X2, num_iterations=60000):
         denominator = np.linalg.norm((e3 @ (E @ X1[test_indices].T)), axis= 0)**2
         d1 =  np.diag(numerator /denominator)
 
-        numerator = (X1[test_indices] @ (E @ X2[test_indices].T))**2
-        denominator=np.linalg.norm((e3 @ (E.T @ X2[test_indices].T)), axis= 0)**2
+        numerator = (X1[test_indices] @ (E.T @ X2[test_indices].T))**2
+        denominator= np.linalg.norm((e3 @ (E.T @ X2[test_indices].T)), axis= 0)**2
         d2 = np.diag(numerator/denominator)
-        d = d1 
-        #numerator = (np.sum(X2[test_indices]  * (X1[test_indices] @ E), axis=1))**2
-        #denominator = np.sum((X1[test_indices] @ E.T)[:,:2]**2, axis= 1) + np.sum((E @ X1[test_indices].T)[:2,:]**2, axis = 0)
-        #d = numerator /denominator
-        inliers = test_indices[d< eps]
+
+        d = d1 + d2
+
+        inliers = np.concatenate([sample_indices, test_indices[d< eps]])
         num_inliers = len(inliers)
 
         """ END YOUR CODE
