@@ -31,6 +31,11 @@ def plot_epipolar_lines(image1, image2, uncalibrated_1, uncalibrated_2, E, K, pl
 
     """ YOUR CODE HERE
     """
+    F = np.linalg.inv(K).T @ E @ np.linalg.inv(K)
+    for i in range(uncalibrated_1.shape[0]):
+        epi = uncalibrated_2[i] @ F @ uncalibrated_1[i]
+
+    #epipolar_lines_in_1= uncalibrated_2 @ F @ uncalibrated_1
     
     """ END YOUR CODE
     """

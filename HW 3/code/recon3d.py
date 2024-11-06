@@ -15,7 +15,13 @@ def reconstruct3D(transform_candidates, calibrated_1, calibrated_2):
     lambdas = np.zeros((2, calibrated_1.shape[0]))
     """ YOUR CODE HERE
     """
-
+    for i in range(calibrated_1.shape[0]):
+      a1 = R @ calibrated_1[i].reshape(-1,1)
+      a2 = -calibrated_2[i].reshape(-1,1)
+      a = np.hstack([a1, a2])
+      sol = np.linalg.lstsq(a, -T,rcond=None)[0]
+      lambdas[0,i] = sol[1]
+      lambdas[1,i] = sol[0]  
     """ END YOUR CODE
     """
     num_front = np.sum(np.logical_and(lambdas[0]>0, lambdas[1]>0))
