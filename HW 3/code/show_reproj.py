@@ -5,6 +5,12 @@ def show_reprojections(image1, image2, uncalibrated_1, uncalibrated_2, P1, P2, K
 
   """ YOUR CODE HERE
   """
+  P1proj = K @ (R @ P1.T + T.reshape(-1,1))
+  
+  P2proj = K@ (R.T @ P2.T + (-R.T@T.reshape(-1,1)))
+  P1proj = P1proj.T
+  P2proj = P2proj.T
+
   
   """ END YOUR CODE
   """
