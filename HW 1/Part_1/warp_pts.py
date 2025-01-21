@@ -19,10 +19,8 @@ def warp_pts(X, Y, interior_pts):
 
     """
 
-    # You should Complete est_homography first!
     H = est_homography(X, Y)
     interior_pts = np.hstack([interior_pts, np.ones((interior_pts.shape[0],1))])
-    print(H)
     warped_pts = np.matmul(H,interior_pts.T).T
     warped_pts = warped_pts[:,:2]/warped_pts[:,2][:,np.newaxis]
     return warped_pts

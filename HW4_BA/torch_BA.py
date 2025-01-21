@@ -20,6 +20,7 @@ class torch_BA(torch.nn.Module):
         assert features.shape[0] == N and features.shape[1] == F and features.shape[2] == 2
 
         #############################  TODO 4.1 BEGIN  ############################
+        
         # DO NOT CHANGE THE NAME, BECAUSE IT FILLS IN THE OPIMIZOR
         self.theta = torch.nn.Parameter((torch.zeros((F- 1,3),device= device)),requires_grad=True)
         self.trans = torch.nn.Parameter((torch.zeros((F- 1,3),device= device)),requires_grad=True)
@@ -46,21 +47,26 @@ class torch_BA(torch.nn.Module):
         You can use provided function batch_rodrigues to convert axis angle representation to rotation matrix
         """
         device = self.device
-        #############################  TODO 4.2 BEGIN  ############################
+        
         R = batch_rodrigues(self.theta)
-        R = torch.cat([torch.eye(3, device= device).unsqueeze(0), R], dim =0)
-        T = torch.cat([torch.zeros(1,3,device=device), self.trans], dim = 0)
-        reproj_features = torch.zeros((self.N,self.F, 2), device= device)
+        # First frame is reference frame (identity rotation, zero translation)
+        R = torch.cat([torch.eye(3, device=device).unsqueeze(0), R], dim=0)
+        T = torch.cat([torch.zeros(1,3, device=device), self.trans], dim=0)
+        reproj_features = torch.zeros((self.N, self.F, 2), device=device)
+        
+        # First frame features are just the normalized 3D points
+        reproj_features[:,0,:] = self.key3d[:,:2]
+        
+        # Project points for other frames
+        for i in range(1, self.F):
+            Pc = (R[i] @ self.key3d.T).T + T[i]
+            reproj_features[:,i,:] = Pc[:,:2]/Pc[:,2:3]
 
-        for i in range (self.F):
-            Pc=  (R[i] @ self.key3d.T).T + T[i]
-            reproj_features[:,i,0] = Pc[:,0]/Pc[:,2]
-            reproj_features[:,i,1] = Pc[:,1]/Pc[:,2]
-        #############################  TODO 4.2 END  ##############################
         if training == False:
             reproj_features = reproj_features.detach().cpu()
 
-        return reproj_features # Return normalized calibrated keypoint in (N,F,2), with z = 1 ignored
+        return reproj_features
+
 
 
     def config_optimizer(self, lr):

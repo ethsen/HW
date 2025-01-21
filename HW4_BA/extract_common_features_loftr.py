@@ -47,57 +47,95 @@ def extract_features(matcher, image_pair, filter_with_conf=True):
         ransac_options.confidence = 0.99  # Confidence level
         ransac_options.min_num_trials = 100  # Minimum RANSAC iterations
         ransac_options.max_num_trials = 1000  # Maximum RANSAC iterations
-        inliers = pycolmap.fundamental_matrix_estimation(mkpts0, mkpts1, ransac_options)['inliers']
+        inliers = pycolmap.estimate_fundamental_matrix(mkpts0, mkpts1, ransac_options)['inlier_mask']
         print("inliers:", np.count_nonzero(inliers))
 
         mkpts0 = mkpts0[inliers]
         mkpts1 = mkpts1[inliers]
+        
 
         return mkpts0, mkpts1
 
 
 #############################  TODO 4.5 BEGIN  ############################
-# Any helper functions you need for this part
-def findMatches(matcher, imgName, imageDir):
-    matches = []
-    for i in range(len(imgName) - 1):
-        image_pair = [
-            os.path.join(imageDir, imgName[i]),
-            os.path.join(imageDir, imgName[i + 1])
+
+def trackFeatures(matcher, imgs, dir,K):
+    
+    matches = {}
+    imgPair = [
+            os.path.join(dir, imgs[0]),  
+            os.path.join(dir, imgs[1])
         ]
-        mkpts0, mkpts1 = extract_features(matcher, image_pair, filter_with_conf=True)
-        matches.append((mkpts0, mkpts1))
-    return matches
+    refFramePts, secondFramePts = extract_features(matcher, imgPair, filter_with_conf=True)
 
-def trackFeats(matches):
-    numImgs = len(matches) + 1
-    features = []
-    
-    pt0, pt1 = matches[0]
-    curr = {i: [points0[i], pt1[i]] for i in range(len(pt0))}
-    
-    for i in range(1, len(matches)):
-        points0, points1 = matches[i]
-        newTracks = {}
-        for id, track in curr.items():
-            prevPt = track[-1]
-            for j in range(len(points0)):
-                if np.allclose(prevPt, points0[j], atol=1.0):
-                    newTracks = track + [points1[j]]
-                    if len(newTracks) == i + 2:  
-                        newTracks[id] = newTracks
-                    break
-        curr = newTracks
-    
-    # Convert tracks to numpy array
-    commonFeatures = []
-    for track in curr.values():
-        if len(track) == numImgs:  # Only keep complete tracks
-            commonFeatures.append(track)
-    
-    return np.array(commonFeatures)
+    for i in range(len(refFramePts)):
+        matches[tuple(refFramePts[i])] = [refFramePts[i], secondFramePts[i]]
 
+    for i in range(2,len(imgs)):
+        imgPair = [
+            os.path.join(dir, imgs[0]),  
+            os.path.join(dir, imgs[i])
+        ]
+        refFramePts, currFramePts = extract_features(matcher,imgPair, filter_with_conf= True)
+        newMatches = {}
+        for j in range(len(refFramePts)):
+            key  =tuple(refFramePts[j])
+            if key in matches:
+                currTrack =  matches[key].copy()
+                currTrack.append(currFramePts[j])
+                newMatches[key] =currTrack
+
+        matches = newMatches
+
+    features =np.array(list(matches.values()))
+
+    #scale back up pixels
+    features[:,:,0] *= 3.15
+    features[:,:,1] *= 3.15
+    # Convert to calibrated coordinates
+    K_inv = np.linalg.inv(K)
+    
+    # Convert to homogeneous coordinates
+    N, F, _ = features.shape
+    homogeneous = np.ones((N, F, 3))
+    homogeneous[:, :, :2] = features
+    
+    # Apply inverse camera matrix to get calibrated coordinates
+    calibrated = homogeneous @ K_inv.T
+    calibrated = calibrated[:, :, :2] / calibrated[:, :, 2:3]
+    
+    return calibrated
 ##############################  TODO 4.5 END  #############################
+
+def visualize_features(images_dir, image_names, features):
+    """
+    Visualize tracked features across all frames
+    features: numpy array of shape (N, F, 2) where N is number of features and F is number of frames
+    """
+    import matplotlib.pyplot as plt
+    
+    # Read and resize all images
+    images = []
+    for img_name in image_names:
+        img = cv2.imread(os.path.join(images_dir, img_name))
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (1280, 960))
+        images.append(img)
+    
+    # Create subplot for each image
+    fig, axes = plt.subplots(1, len(images), figsize=(20, 5))
+    
+    # Plot features on each image
+    for f in range(len(images)):
+        axes[f].imshow(images[f])
+        # Plot all feature points for this frame
+        frame_pts = features[:, f, :]
+        axes[f].plot(frame_pts[:, 0], frame_pts[:, 1], 'ro', markersize=2)
+        axes[f].axis('off')
+        axes[f].set_title(f'Frame {f}')
+    
+    plt.tight_layout()
+    plt.show()
 
 
 def main():
@@ -119,15 +157,11 @@ def main():
     # Find common features
     # You can add any helper functions you need
     # Find matches between consecutive pairs
-    matches = findMatches(matcher, image_names, image_dir)
-    common_features = trackFeats(matches)
+    features = trackFeatures(matcher, image_names, image_dir,K)
 
-    image_pair = [..., ...]
-    extract_features(matcher, image_pair, filter_with_conf=True)
-    common_features = ...   # N x F x 2
     ##############################  TODO 4.5 END  #############################
 
-    np.savez("loftr_features.npz", data=common_features, image_names=image_names, intrinsic=K)
+    np.savez("loftr_features.npz", data=features, image_names=image_names, intrinsic=K)
 
 
 if __name__ == '__main__':
